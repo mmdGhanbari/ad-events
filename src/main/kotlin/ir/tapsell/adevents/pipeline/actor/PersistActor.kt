@@ -10,7 +10,7 @@ class PersistActor {
     suspend fun run(channel: ReceiveChannel<PersistData>) {
         for (msg in channel) {
             delay(100)
-            println(msg.data)
+//            println(msg.data)
         }
     }
 }

@@ -3,7 +3,6 @@ package ir.tapsell.adevents.pipeline
 import ir.tapsell.adevents.pipeline.actor.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
@@ -17,21 +16,18 @@ class Pipeline(
     private val transformerActor: TransformerActor,
     private val persistActor: PersistActor,
 ) {
+    private var sourceChannel: SendChannel<SourceMessage>? = null
+
+    fun getSourceActor() = sourceChannel
+
     private fun <E> CoroutineScope.spawnActor(
-        receiveChannel: ReceiveChannel<E>? = null,
         fn: suspend (ReceiveChannel<E>) -> Unit
     ): SendChannel<E> = actor {
-        fn(receiveChannel ?: channel)
-    }
-
-    private fun CoroutineScope.spawnSources(
-        sourceChannel: ReceiveChannel<RequestData>,
-    ) = repeat(2) {
-        spawnActor(sourceChannel) { sourceActor.run(it) }
+        fn(channel)
     }
 
     private fun CoroutineScope.spawnTransformers(
-        sourceChannel: SendChannel<RequestData>,
+        sourceChannel: SendChannel<SourceMessage>,
         sinkChannel: SendChannel<PersistData>
     ) = repeat(3) {
         launch {
@@ -40,17 +36,15 @@ class Pipeline(
     }
 
     fun run() = runBlocking(Dispatchers.Default) {
-        val sourceChannel = Channel<RequestData>()
-        // source1
-        spawnActor(sourceChannel) { sourceActor.run(it) }
-        // source2
-        spawnActor(sourceChannel) { sourceActor.run(it) }
+        // source
+        val source: SendChannel<SourceMessage> = spawnActor { sourceActor.run(it) }
+        sourceChannel = source
 
         // sink
         val sinkChannel: SendChannel<PersistData> =
             spawnActor { persistActor.run(it) }
 
         // transformers
-        spawnTransformers(sourceChannel, sinkChannel)
+        spawnTransformers(source, sinkChannel)
     }
 }

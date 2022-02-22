@@ -1,16 +1,25 @@
 package ir.tapsell.adevents.pipeline.actor
 
+import ir.tapsell.adevents.model.Event
 import ir.tapsell.adevents.pipeline.*
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.delay
 import org.springframework.stereotype.Component
 
 @Component
 class SourceActor {
-    suspend fun run(channel: ReceiveChannel<RequestData>) {
+    suspend fun run(channel: ReceiveChannel<SourceMessage>) {
+        val buffer: MutableList<Event> = mutableListOf()
+
         for (msg in channel) {
-            delay(500)
-            msg.response.complete(List(100) { it * 1 })
+            when (msg) {
+                is RequestEvents -> {
+                    val events = buffer.toList()
+                    msg.response.complete(events)
+                    buffer.clear()
+                }
+                is BufferEvent -> buffer.add(msg.event)
+            }
+
         }
     }
 }
