@@ -7,10 +7,10 @@ import org.springframework.stereotype.Component
 
 @Component
 class PersistActor {
-    suspend fun run(channel: ReceiveChannel<PersistData>) {
+    suspend fun run(channel: ReceiveChannel<PersistEvent>) {
         for (msg in channel) {
-            delay(100)
-//            println(msg.data)
+//            delay(100)
+//            println(msg.event)
         }
     }
 }

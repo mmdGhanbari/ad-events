@@ -28,7 +28,7 @@ class Pipeline(
 
     private fun CoroutineScope.spawnTransformers(
         sourceChannel: SendChannel<SourceMessage>,
-        sinkChannel: SendChannel<PersistData>
+        sinkChannel: SendChannel<PersistEvent>
     ) = repeat(3) {
         launch {
             transformerActor.run(sourceChannel, sinkChannel)
@@ -41,7 +41,7 @@ class Pipeline(
         sourceChannel = source
 
         // sink
-        val sinkChannel: SendChannel<PersistData> =
+        val sinkChannel: SendChannel<PersistEvent> =
             spawnActor { persistActor.run(it) }
 
         // transformers

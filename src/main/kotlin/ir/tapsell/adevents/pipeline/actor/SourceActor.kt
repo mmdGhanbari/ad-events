@@ -4,6 +4,7 @@ import ir.tapsell.adevents.model.Event
 import ir.tapsell.adevents.pipeline.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import org.springframework.stereotype.Component
+import kotlin.math.min
 
 @Component
 class SourceActor {
@@ -13,9 +14,11 @@ class SourceActor {
         for (msg in channel) {
             when (msg) {
                 is RequestEvents -> {
-                    val events = buffer.toList()
+                    val bucketSize = min(msg.bucketSize, buffer.size)
+                    val events = buffer.slice(0 until bucketSize)
                     msg.response.complete(events)
-                    buffer.clear()
+
+                    buffer.subList(0, bucketSize).clear()
                 }
                 is BufferEvent -> buffer.add(msg.event)
             }
