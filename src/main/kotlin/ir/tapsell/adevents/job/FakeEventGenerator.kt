@@ -22,18 +22,20 @@ class FakeEventGenerator(
 ) {
     val eventBuffer: MutableList<Event> = emptyList<Event>().toMutableList()
 
-    val adTitles = listOf("Beautiful Ad!", "Very Very Boring Ad!", "Black Screen!!")
-    val appTitles = listOf("My Casual Game!", "My Serious Game!", "My Boring App")
+    companion object {
+        private val adTitles = listOf("Beautiful Ad!", "Very Very Boring Ad!", "Black Screen!!")
+        private val appTitles = listOf("My Casual Game!", "My Serious Game!", "My Boring App")
 
-    private fun createFakeImpressionEvent() = ImpressionEvent(
-        requestId = UUID.randomUUID().toString(),
-        adId = UUID.randomUUID().toString(),
-        adTitle = adTitles.random(),
-        advertiserCost = Random.nextDouble(200.0, 500.0),
-        appId = UUID.randomUUID().toString(),
-        appTitle = appTitles.random(),
-        impressionTime = System.currentTimeMillis(),
-    )
+        fun createFakeImpressionEvent() = ImpressionEvent(
+            requestId = UUID.randomUUID().toString(),
+            adId = UUID.randomUUID().toString(),
+            adTitle = adTitles.random(),
+            advertiserCost = Random.nextDouble(200.0, 500.0),
+            appId = UUID.randomUUID().toString(),
+            appTitle = appTitles.random(),
+            impressionTime = System.currentTimeMillis(),
+        )
+    }
 
     private fun CoroutineScope.launchGeneratorWorker() = launch {
         while (true) {
@@ -52,6 +54,7 @@ class FakeEventGenerator(
     private fun CoroutineScope.launchSender() = launch {
         while (true) {
             delay(1000)
+            println("produced ${eventBuffer.size} fake events")
             eventBuffer.forEach { kafkaService.sendEvents(it) }
             eventBuffer.clear()
         }
